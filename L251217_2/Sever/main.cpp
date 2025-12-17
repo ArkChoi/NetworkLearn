@@ -6,6 +6,20 @@
 
 #pragma comment(lib, "ws2_32")
 
+#pragma pack(push, 1)
+struct Data
+{
+	int Number1;
+	int Number2;
+	char Operator;
+};
+
+struct Result
+{
+	int Number;
+};
+#pragma pack(pop)
+
 int main()
 {
 	WSAData wsaData;
@@ -35,28 +49,14 @@ int main()
 	{
 		SOCKET ClientSocket = accept(ListenSocket, (SOCKADDR*)&ClientSockAddr, &ClientSockAddrSize);
 
-		char Buffer[1024] = { 0, };
+		Data Buffer;
 
-		int RecvByte = recv(ClientSocket, Buffer, sizeof(Buffer), 0);
-		if (RecvByte <= 0)
-		{
-			break;
-		}
-		//[1][0][+][1][0][\0]
-		std::string Message(Buffer);
-		std::string Number1 = Message.substr(0, 2);
-		std::string Operator = Message.substr(2, 1);
-		std::string Number2 = Message.substr(3, 2);
+		int RecvByte = recv(ClientSocket, (char*)&Buffer, sizeof(Buffer), 0);
 
-		std::cout << Message << std::endl;
-		std::cout << Number1 << std::endl;
-		std::cout << Operator << std::endl;
-		std::cout << Number2 << std::endl;
+		Result ResultBuffer;
+		ResultBuffer.Number = Buffer.Number1 + Buffer.Number2;
 
-		int Result = std::stoi(Number1) + std::stoi(Number2);
-		sprintf(Buffer, "%d", Result);
-
-		int SentByte = send(ClientSocket, Buffer, strlen(Buffer) + 1, 0);
+		int SentByte = send(ClientSocket, (char*)&ResultBuffer, sizeof(ResultBuffer), 0);
 
 		closesocket(ClientSocket);
 	}

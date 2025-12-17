@@ -8,6 +8,20 @@
 
 #pragma comment(lib, "ws2_32")
 
+#pragma pack(push, 1)
+struct Data
+{
+	int Number1;
+	int Number2;
+	char Operator;
+};
+
+struct Result
+{
+	int Number;
+};
+#pragma pack(pop)
+
 int main()
 {
 	WSAData wsaData;
@@ -32,30 +46,20 @@ int main()
 
 		connect(ServerSocket, (SOCKADDR*)&ServerSockAddr, sizeof(ServerSockAddr));
 
-		//c언어 스타일 문자열 처리,
-		//c++ string
-		//std::default_random_engine generator((unsigned int)std::time(0));
-		//std::uniform_int_distribution<int>  distribution(10, 99);
-		//int Number1 = distribution(generator);
-		//int Number2 = distribution(generator);
+		Data MyPacket;
 
-		//std::string Buffer;
-		//Buffer = std::to_string(Number1) + "+" + std::to_string(Number2);
-		//std::cout << Buffer << std::endl;
+		MyPacket.Number1 = rand() % 10000;
+		MyPacket.Number2 = rand() % 10000;
+		MyPacket.Operator = '+';
 
-		int Number1 = rand() % 90 + 10;
-		int Number2 = rand() % 90 + 10;
+		std::cout << MyPacket.Number1 << MyPacket.Operator << MyPacket.Number2 << std::endl;
 
-		char Buffer[1024] = { 0, };
-		sprintf(Buffer, "%d+%d", Number1, Number2);
+		int SentByte = send(ServerSocket, (char*)&MyPacket, sizeof(Data), 0);
 
-		std::cout << Buffer << std::endl;
+		Result Buffer;
 
-		//[1][0][+][1][0][\0][][]
-		int SentByte = send(ServerSocket, Buffer, (int)strlen(Buffer), 0);
-
-		int RecvByte = recv(ServerSocket, Buffer, sizeof(Buffer) - 1, 0);
-		std::cout << Buffer << std::endl;
+		int RecvByte = recv(ServerSocket, (char*)&Buffer, sizeof(Buffer), 0);
+		std::cout << Buffer.Number << std::endl;
 
 
 		closesocket(ServerSocket);
