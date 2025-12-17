@@ -35,7 +35,12 @@ int main()
 	char Message[1024] = "Hello Server";
 	scanf("%s", &Message);
 
-	int SentByte = send(SeverSocket, Message, (int)strlen(Message), 0); //SentByte 보내진 Byte 량 체크용
+	int SentByte = send(SeverSocket, Message, (int)strlen(Message)+1, 0); //SentByte 보내진 Byte 량 체크용
+
+	memset(&Buffer, 0, sizeof(Buffer));
+	RecvByte = recv(SeverSocket, Buffer, sizeof(Buffer), 0);
+
+	std::cout << Buffer << std::endl;
 
 	closesocket(SeverSocket);
 
