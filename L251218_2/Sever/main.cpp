@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
-
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <iostream>
+#include <string.h>
 #include <string>
 #include <WinSock2.h>
 
@@ -41,7 +42,7 @@ int main()
 	memset(&ServerSockAddr, 0, sizeof(ServerSockAddr));
 	//ZeroMemory(&ServerSockAddr, sizeof(ServerSockAddr));
 	ServerSockAddr.sin_family = PF_INET;
-	ServerSockAddr.sin_addr.s_addr = INADDR_ANY; //¼ö¾÷¿ë
+	ServerSockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	ServerSockAddr.sin_port = htons(33333); //Byte Order
 
 	bind(ListenSocket, (SOCKADDR*)&ServerSockAddr, sizeof(ServerSockAddr));
@@ -52,11 +53,12 @@ int main()
 	memset(&ClientSockAddr, 0, sizeof(ClientSockAddr));
 	int ClientSockAddrSize = sizeof(ClientSockAddr);
 
-	FILE* file = fopen("tree.jpg", "rb");
-	if (file == NULL)
-	{
-		return -1;
-	}
+	int FileCount = 2;
+
+	const char* FileNames[2];
+
+	FileNames[0] = "tree.jpg";
+	FileNames[1] = "baddong.jpg";
 
 	ImageFile TempFile;
 
@@ -64,26 +66,47 @@ int main()
 	{
 		SOCKET ClientSocket = accept(ListenSocket, (SOCKADDR*)&ClientSockAddr, &ClientSockAddrSize);
 
-		while (true)
+		int SentByte = send(ClientSocket, (char*)&FileCount, sizeof(int), 0);
+
+		for (int i = 0; i < FileCount; i++)
 		{
-			TempFile.SendSize = fread(TempFile.Image, sizeof(char), sizeof(TempFile.Image), file);
+			TempFile.bIsFin = false;
 
-			std::cout << TempFile.SendSize << std::endl;
-
-			int SentByte = send(ClientSocket, (char*)&TempFile, sizeof(TempFile), 0);
-
-			if (feof(file))
+			FILE* file = fopen(FileNames[i], "rb");
+			if (file == NULL)
 			{
-				TempFile.bIsFin = true;
-				int SentByte = send(ClientSocket, (char*)&TempFile, sizeof(TempFile), 0);
-				break;
+				return -1;
 			}
-		}
 
+			int FileNameSize = strlen(FileNames[i]);
+			std::cout << FileNameSize << std::endl;
+			SentByte = send(ClientSocket, (char*)&FileNameSize, sizeof(int), 0);
+
+			SentByte = send(ClientSocket, FileNames[i], FileNameSize, 0);
+			std::cout << FileNames[i] << std::endl;
+
+			while (true)
+			{
+				TempFile.SendSize = fread(TempFile.Image, sizeof(char), sizeof(TempFile.Image), file);
+
+				SentByte = send(ClientSocket, (char*)&TempFile, sizeof(TempFile), 0);
+
+				std::cout << TempFile.SendSize << " |";
+
+				if (feof(file))
+				{
+					TempFile.bIsFin = true;
+					int SentByte = send(ClientSocket, (char*)&TempFile, sizeof(TempFile), 0);
+					std::cout << std::endl;
+					break;
+				}
+			}
+
+			fclose(file);
+		}
 		closesocket(ClientSocket);
 	}
 
-	fclose(file);
 
 	closesocket(ListenSocket);
 
